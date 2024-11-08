@@ -36,37 +36,49 @@ namespace Base.IoC.DI.Container
 
         public IBinder Bind(Type type)
         {
-            throw new NotImplementedException();
+            var binder = InternalBind(type);
+            return binder;
         }
 
         public IBinder BindInterfaces(Type type)
         {
-            throw new NotImplementedException();
+            var binder = BinderProvider();
+            binder.BindInterfaces(type, this);
+            return binder;
         }
 
         public IBinder BindInterfaces(object instance)
         {
-            throw new NotImplementedException();
+            var binder = BinderProvider();
+            binder.BindInterfaces(instance, this);
+            return binder;
         }
 
         public void BindSelf<T>() where T : class, new()
         {
-            throw new NotImplementedException();
+            var binder = InternalBind<T>();
+            binder.AsSingle<T>();
         }
 
         public T Build<T>() where T : class
         {
-            throw new NotImplementedException();
+            var contract = typeof(T);
+            var instance = Get(contract) as T;
+            return instance;
         }
 
         public void Release<T>() where T : class
         {
-            throw new NotImplementedException();
+            var type = typeof(T);
+            _providers.Remove(type);
         }
 
         public T Inject<T>(T instance)
         {
-            throw new NotImplementedException();
+            if (instance != null)
+            {
+                InternalInject(instance);
+            }
         }
 
         public object CreateDependency(Type contract, PropertyInfo info)
@@ -92,6 +104,33 @@ namespace Base.IoC.DI.Container
             binder.Bind<T>(this);
 
             return binder;
+        }
+
+        private IBinder InternalBind(Type type)
+        {
+            var binder = BinderProvider();
+            binder.Bind(type, this);
+
+            return binder;
+        }
+
+        private object Get(Type contract)
+        {
+            return CreateDependency(contract, null);
+        }
+
+        private void InternalInject(object instanceToFulfill)
+        {
+            var contract = instanceToFulfill.GetType();
+            var properties = GetInjectProperties(contract);
+        }
+
+        private MemberInfo[] GetInjectProperties(Type contract)
+        {
+            if (!_cachedProperties.TryGetValue(contract, out var properties))
+            {
+                var info = Utility.SystemType.GetInjectProperties(contract, InjectAttributeType);
+            }
         }
     }
 }
